@@ -3,3 +3,4 @@
 /.vscode
 *.session.sql
 configuration.yaml
+.env
