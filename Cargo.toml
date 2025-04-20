@@ -29,3 +29,4 @@ uuid = { version = "1.16.0", features = ["v4"] }
 
 [dev-dependencies]
 reqwest = "0.12.11"
+tokio-test = "0.4.3"

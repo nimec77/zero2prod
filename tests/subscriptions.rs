@@ -1,8 +1,9 @@
 use helpers::spawn_app;
 
+
 mod helpers;
 
-#[tokio::test]
+#[tokio::test(flavor = "multi_thread")]
 async fn subscribe_returns_a_200_for_valid_form_data() {
     // Arrange
     let test_app = spawn_app().await;
@@ -30,7 +31,7 @@ async fn subscribe_returns_a_200_for_valid_form_data() {
     assert_eq!(saved.name, "le guin");
 }
 
-#[tokio::test]
+#[tokio::test(flavor = "multi_thread")]
 async fn subscribe_returns_a_400_for_invalid_form_data() {
     // Arrange
     let test_app = spawn_app().await;

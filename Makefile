@@ -16,7 +16,7 @@ r:
 
 # Run tests
 t:
-	$(CARGO) test
+	$(CARGO) test -- --nocapture
 
 # Format the code
 fmt:

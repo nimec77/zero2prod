@@ -2,14 +2,15 @@ use helpers::spawn_app;
 
 mod helpers;
 
-#[tokio::test]
+#[tokio::test(flavor = "multi_thread")]
 async fn health_check_works() {
+    // Setup
     let test_app = spawn_app().await;
-
     let client = reqwest::Client::new();
 
+    // Test
     let response = client
-        .get(format!("{}/health_check", &test_app.address))
+        .get(format!("{}/health_check", test_app.address))
         .send()
         .await
         .expect("Failed to execute request.");
