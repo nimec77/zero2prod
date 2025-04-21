@@ -16,7 +16,7 @@ r:
 
 # Run tests
 t:
-	$(CARGO) test -- --nocapture
+	./scripts/run-test.sh
 
 # Format the code
 fmt:

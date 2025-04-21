@@ -4,3 +4,4 @@
 *.session.sql
 configuration.yaml
 .env
+.env_test
