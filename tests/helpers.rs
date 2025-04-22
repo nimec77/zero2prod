@@ -5,6 +5,7 @@ use zero2prod::configuration::{DatabaseSettings, get_configuration};
 
 const TEST_DATABASE_NAME: &str = "emails_test";
 
+#[allow(dead_code)]
 pub struct TestApp {
     pub address: String,
     pub db_pool: PgPool,
