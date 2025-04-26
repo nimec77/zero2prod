@@ -54,8 +54,7 @@ async fn subscribe_returns_a_400_for_invalid_form_data() {
         assert_eq!(
             400,
             response.status().as_u16(),
-            "The API did not fail with 400 Bad Request when the payload was {}",
-            error_message
+            "The API did not fail with 400 Bad Request when the payload was {error_message}"
         );
     }
 }
