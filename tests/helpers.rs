@@ -1,9 +1,23 @@
 use std::net::TcpListener;
 
+use once_cell::sync::Lazy;
 use sqlx::PgPool;
-use zero2prod::configuration::{DatabaseSettings, get_configuration};
+use zero2prod::{
+    configuration::{DatabaseSettings, get_configuration},
+    get_subscriber, init_subscriber,
+};
 
 const TEST_DATABASE_NAME: &str = "emails_test";
+
+static TRACING: Lazy<()> = Lazy::new(|| {
+    if std::env::var("TEST_LOG").is_ok() {
+        let subscriber = get_subscriber("test".into(), "debug".into(), std::io::stdout);
+        init_subscriber(subscriber);
+    } else {
+        let subscriber = get_subscriber("test".into(), "debug".into(), std::io::sink);
+        init_subscriber(subscriber);
+    }
+});
 
 #[allow(dead_code)]
 pub struct TestApp {
@@ -13,6 +27,8 @@ pub struct TestApp {
 
 impl TestApp {
     pub async fn new() -> Self {
+        Lazy::force(&TRACING);
+
         let listener = TcpListener::bind("127.0.0.1:0").expect("Failed to bind random port");
         let port = listener.local_addr().unwrap().port();
         let mut configuration = get_configuration().expect("Failed to read configuration.");
