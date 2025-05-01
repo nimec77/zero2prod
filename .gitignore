@@ -2,6 +2,7 @@
 /.idea
 /.vscode
 *.session.sql
+/configuration
 configuration.yaml
 .env
 .env_test
