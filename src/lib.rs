@@ -4,6 +4,7 @@ use tracing_log::LogTracer;
 use tracing_subscriber::{EnvFilter, Registry, fmt::MakeWriter, layer::SubscriberExt};
 
 pub mod configuration;
+pub mod domain;
 pub mod routes;
 pub mod startup;
 

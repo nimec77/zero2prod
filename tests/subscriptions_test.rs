@@ -83,7 +83,10 @@ async fn subscribe_returns_a_200_when_fields_are_present_but_empty() {
     let test_cases = vec![
         (format!("name=&email={}", email.url_encode()), "empty name"),
         (format!("name={}&email=", name.url_encode()), "empty email"),
-        (format!("name={}&email=definitely-not-an-email", name.url_encode()), "invalid email"),
+        (
+            format!("name={}&email=definitely-not-an-email", name.url_encode()),
+            "invalid email",
+        ),
     ];
     for (body, description) in test_cases {
         // Act
@@ -96,9 +99,9 @@ async fn subscribe_returns_a_200_when_fields_are_present_but_empty() {
             .expect("Failed to execute request.");
         // Assert
         assert_eq!(
-            200,
+            400,
             response.status().as_u16(),
-            "The API did not return a 200 OK when the payload was {description}."
+            "The API did not return a 400 Bad Request when the payload was {description}."
         );
     }
 }
