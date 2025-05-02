@@ -97,6 +97,7 @@ async fn subscribe_returns_a_200_when_fields_are_present_but_empty() {
             .send()
             .await
             .expect("Failed to execute request.");
+        
         // Assert
         assert_eq!(
             400,
