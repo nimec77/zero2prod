@@ -25,7 +25,7 @@ sqlx migrate run
 
 #––– run the full test suite
 echo "[3/4] running cargo tests…"
-RUST_LOG=trace TEST_LOG=1 RUST_BACKTRACE=1 cargo test | bunyan
+TEST_LOG=1 RUST_BACKTRACE=1 cargo test | bunyan
 
 #––– final drop happens automatically via the trap
 echo "[4/4] tests complete; dropping test database…"
