@@ -1,6 +1,7 @@
 use actix_web::{HttpResponse, web};
 use serde::Deserialize;
 use sqlx::{PgPool, types::chrono::Utc};
+use unicode_segmentation::UnicodeSegmentation;
 use uuid::Uuid;
 
 #[derive(Deserialize)]
@@ -18,6 +19,9 @@ pub struct FormData {
     )
 )]
 pub async fn subscriptions(form: web::Form<FormData>, pool: web::Data<PgPool>) -> HttpResponse {
+    if !is_valid_name(&form.name) {
+        return HttpResponse::BadRequest().finish();
+    }
     match insert_subscriber(&form, &pool).await {
         Ok(_) => HttpResponse::Ok().finish(),
         Err(_) => HttpResponse::InternalServerError().finish(),
@@ -48,3 +52,13 @@ pub async fn insert_subscriber(form: &FormData, pool: &PgPool) -> Result<(), sql
 
     Ok(())
 }
+
+pub fn is_valid_name(name: &str) -> bool {
+    let its_empty_or_whitespace = name.trim().is_empty();
+    let its_too_long = name.graphemes(true).count() > 256;
+    let forbidden_characters = ['/', '(', ')','"', '<', '>','\\', '{', '}'];
+    let contains_forbidden_characters = name.chars().any(|c| forbidden_characters.contains(&c));
+
+    !(its_empty_or_whitespace || its_too_long || contains_forbidden_characters)
+}
+
