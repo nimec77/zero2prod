@@ -4,6 +4,7 @@ use once_cell::sync::Lazy;
 use sqlx::PgPool;
 use zero2prod::{
     configuration::{DatabaseSettings, get_configuration},
+    email_client::EmailClient,
     get_subscriber, init_subscriber,
 };
 
@@ -34,7 +35,14 @@ impl TestApp {
         let mut configuration = get_configuration().expect("Failed to read configuration.");
         configuration.database.database_name = TEST_DATABASE_NAME.to_owned();
         let connection_pool = configure_database(&configuration.database).await;
-        let server = zero2prod::startup::run(listener, connection_pool.clone())
+
+        let sender_email = configuration
+            .email_client
+            .sender()
+            .expect("Invalid sender email address.");
+        let email_client = EmailClient::new(configuration.email_client.base_url, sender_email);
+
+        let server = zero2prod::startup::run(listener, connection_pool.clone(), email_client)
             .expect("Failed to bind address");
         tokio::spawn(server);
         // Create a cleanup handle using tokio::spawn with a new runtime
