@@ -3,7 +3,7 @@ use serde::Deserialize;
 use sqlx::{PgPool, types::chrono::Utc};
 use uuid::Uuid;
 
-use crate::domain::{new_subscriber::NewSubscriber, subscriber_name::SubscriberName};
+use crate::domain::{NewSubscriber, SubscriberName};
 
 #[derive(Deserialize)]
 pub struct FormData {
@@ -20,7 +20,7 @@ pub struct FormData {
     )
 )]
 pub async fn subscriptions(form: web::Form<FormData>, pool: web::Data<PgPool>) -> HttpResponse {
-    let name = if let Ok(name) = SubscriberName::parse(form.0.name) {
+    let name = if let Ok(name) = SubscriberName::parse(&form.0.name) {
         name
     } else {
         return HttpResponse::BadRequest().finish()
