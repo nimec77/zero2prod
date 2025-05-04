@@ -3,12 +3,23 @@ use serde::Deserialize;
 use sqlx::{PgPool, types::chrono::Utc};
 use uuid::Uuid;
 
-use crate::domain::{NewSubscriber, SubscriberName};
+use crate::domain::{NewSubscriber, SubscriberEmail, SubscriberName};
 
 #[derive(Deserialize)]
 pub struct FormData {
     email: String,
     name: String,
+}
+
+impl TryFrom<FormData> for NewSubscriber {
+    type Error = String;
+
+    fn try_from(value: FormData) -> Result<Self, Self::Error> {
+        let name = SubscriberName::parse(&value.name)?;
+        let email = SubscriberEmail::parse(&value.email)?;
+
+        Ok(Self { email, name })
+        }
 }
 
 #[tracing::instrument(
@@ -20,16 +31,12 @@ pub struct FormData {
     )
 )]
 pub async fn subscriptions(form: web::Form<FormData>, pool: web::Data<PgPool>) -> HttpResponse {
-    let name = if let Ok(name) = SubscriberName::parse(&form.0.name) {
-        name
+    let new_subscriber = if let Ok(form) = form.0.try_into() {
+        form
     } else {
         return HttpResponse::BadRequest().finish()
     };
-    
-    let new_subscriber = NewSubscriber {
-        email: form.0.email,
-        name,
-    };
+
     match insert_subscriber(&new_subscriber, &pool).await {
         Ok(_) => HttpResponse::Ok().finish(),
         Err(_) => HttpResponse::InternalServerError().finish(),
@@ -47,7 +54,7 @@ pub async fn insert_subscriber(new_subscriber: &NewSubscriber, pool: &PgPool) ->
             VALUES ($1, $2, $3, $4)
             "#,
         Uuid::new_v4(),
-        new_subscriber.email,
+        new_subscriber.email.as_ref(),
         new_subscriber.name.as_ref(),
         Utc::now()
     )
