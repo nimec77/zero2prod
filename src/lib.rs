@@ -8,6 +8,7 @@ pub mod domain;
 pub mod routes;
 pub mod startup;
 
+
 pub fn get_subscriber<Sink>(
     name: String,
     env_filter: String,
