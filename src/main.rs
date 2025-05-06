@@ -1,7 +1,10 @@
 use std::net::TcpListener;
 
 use sqlx::postgres::PgPoolOptions;
-use zero2prod::{configuration::get_configuration, email_client::EmailClient, get_subscriber, init_subscriber, startup::run};
+use zero2prod::{
+    configuration::get_configuration, email_client::EmailClient, get_subscriber, init_subscriber,
+    startup::run,
+};
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
@@ -16,7 +19,15 @@ async fn main() -> std::io::Result<()> {
         .email_client
         .sender()
         .expect("Invalid sender email address.");
-    let email_client = EmailClient::new(configuration.email_client.base_url, sender_email);
+    let email_client = EmailClient::new(
+        configuration
+            .email_client
+            .base_url
+            .parse()
+            .expect("Invalid email client base URL"),
+        sender_email,
+        configuration.email_client.authorization_token,
+    );
 
     let address = format!(
         "{}:{}",
