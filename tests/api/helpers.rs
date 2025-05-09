@@ -70,7 +70,6 @@ async fn configure_database(config: &DatabaseSettings) -> PgPool {
     connection.await.expect("Failed to connect to Postgres.")
 }
 
-#[allow(dead_code)]
 pub trait UrlEncodable {
     fn url_encode(&self) -> String;
 }

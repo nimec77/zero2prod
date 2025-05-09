@@ -1,6 +1,4 @@
-use helpers::{UrlEncodable, spawn_app};
-
-mod helpers;
+use crate::helpers::{spawn_app, UrlEncodable};
 
 #[tokio::test(flavor = "multi_thread")]
 async fn subscribe_returns_a_200_for_valid_form_data() {
@@ -42,7 +40,7 @@ async fn subscribe_returns_a_200_for_valid_form_data() {
 }
 
 #[tokio::test(flavor = "multi_thread")]
-async fn subscribe_returns_a_400_for_invalid_form_data() {
+async fn subscribe_returns_a_400_when_data_is_missing() {
     // Arrange
     let test_app = spawn_app().await;
     let client = reqwest::Client::new();
@@ -74,7 +72,7 @@ async fn subscribe_returns_a_400_for_invalid_form_data() {
 }
 
 #[tokio::test]
-async fn subscribe_returns_a_200_when_fields_are_present_but_empty() {
+async fn subscribe_returns_a_400_when_fields_are_present_but_invalid() {
     // Arrange
     let app = spawn_app().await;
     let client = reqwest::Client::new();

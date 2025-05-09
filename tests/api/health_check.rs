@@ -1,6 +1,4 @@
-use helpers::spawn_app;
-
-mod helpers;
+use crate::helpers::spawn_app;
 
 #[tokio::test(flavor = "multi_thread")]
 async fn health_check_works() {
