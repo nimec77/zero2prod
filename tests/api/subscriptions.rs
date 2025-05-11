@@ -23,10 +23,31 @@ async fn subscribe_returns_a_200_for_valid_form_data() {
     // Act
     let response = test_app.post_subscriptions(body).await;
 
+    // Assert
+    assert_eq!(200, response.status().as_u16());
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn subscribe_persists_the_new_subscriber() {
+    // Arrange
+    let test_app = spawn_app().await;
+    let name = fake_name();
+    let email = fake_email().as_ref().to_owned();
+    let body = format!("name={}&email={}", name.url_encode(), email.url_encode());
+
+    Mock::given(path("/email"))
+        .and(method("POST"))
+        .respond_with(ResponseTemplate::new(200))
+        .mount(&test_app.email_server)
+        .await;
+
+    test_app.post_subscriptions(body).await;
+
     let saved = sqlx::query!(
         r#"
         SELECT email, 
-            name
+            name,
+            status
         FROM subscriptions 
         WHERE email = $1 
         AND name = $2"#,
@@ -38,9 +59,9 @@ async fn subscribe_returns_a_200_for_valid_form_data() {
     .expect("Failed to fetch saved subscriptions.");
 
     // Assert
-    assert_eq!(200, response.status().as_u16());
     assert_eq!(saved.email, email);
     assert_eq!(saved.name, name);
+    assert_eq!(saved.status, "pending_confirmation");
 }
 
 #[tokio::test(flavor = "multi_thread")]
