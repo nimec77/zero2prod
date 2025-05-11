@@ -19,8 +19,11 @@ t:
 	./scripts/run-test.sh
 
 # Format the code
-fmt:
+f:
 	$(CARGO) fmt
+
+fc:
+	$(CARGO) fmt --check
 
 # Check for errors without building
 c:
