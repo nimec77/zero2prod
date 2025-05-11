@@ -5,9 +5,9 @@ use tracing_subscriber::{EnvFilter, Registry, fmt::MakeWriter, layer::Subscriber
 
 pub mod configuration;
 pub mod domain;
+pub mod email_client;
 pub mod routes;
 pub mod startup;
-pub mod email_client;
 
 pub fn get_subscriber<Sink>(
     name: String,

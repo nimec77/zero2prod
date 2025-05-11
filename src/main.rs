@@ -1,7 +1,5 @@
-
 use zero2prod::{
-    configuration::get_configuration, get_subscriber, init_subscriber,
-    startup::Application,
+    configuration::get_configuration, get_subscriber, init_subscriber, startup::Application,
 };
 
 #[tokio::main]

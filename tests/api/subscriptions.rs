@@ -1,15 +1,26 @@
-use crate::helpers::{spawn_app, UrlEncodable};
+use wiremock::{
+    Mock, ResponseTemplate,
+    matchers::{method, path},
+};
+
+use crate::helpers::{UrlEncodable, fake_email, fake_name, spawn_app};
 
 #[tokio::test(flavor = "multi_thread")]
 async fn subscribe_returns_a_200_for_valid_form_data() {
     // Arrange
     let test_app = spawn_app().await;
 
-    // Act
-    let name = "le guin";
-    let email = "ursula_le_guin@gmail.com";
+    let name = fake_name();
+    let email = fake_email().as_ref().to_owned();
     let body = format!("name={}&email={}", name.url_encode(), email.url_encode());
-    // let body = "name=le%20guin&email=ursula_le_guin%40gmail.com";
+
+    Mock::given(path("/email"))
+        .and(method("POST"))
+        .respond_with(ResponseTemplate::new(200))
+        .mount(&test_app.email_server)
+        .await;
+
+    // Act
     let response = test_app.post_subscriptions(body).await;
 
     let saved = sqlx::query!(
@@ -28,16 +39,16 @@ async fn subscribe_returns_a_200_for_valid_form_data() {
 
     // Assert
     assert_eq!(200, response.status().as_u16());
-    assert_eq!(saved.email, "ursula_le_guin@gmail.com");
-    assert_eq!(saved.name, "le guin");
+    assert_eq!(saved.email, email);
+    assert_eq!(saved.name, name);
 }
 
 #[tokio::test(flavor = "multi_thread")]
 async fn subscribe_returns_a_400_when_data_is_missing() {
     // Arrange
     let test_app = spawn_app().await;
-    let name = "le guin";
-    let email = "ursula_le_guin@gmail.co";
+    let name = fake_name();
+    let email = fake_email().as_ref().to_owned();
     let test_cases = vec![
         (format!("name={}", name.url_encode()), "missing the email"),
         (format!("email={}", email.url_encode()), "missing the name"),
@@ -61,8 +72,8 @@ async fn subscribe_returns_a_400_when_data_is_missing() {
 async fn subscribe_returns_a_400_when_fields_are_present_but_invalid() {
     // Arrange
     let app = spawn_app().await;
-    let name = "Ursula";
-    let email = "ursula_le_guin2@gmail.com";
+    let name = fake_name();
+    let email = fake_email().as_ref().to_owned();
     let test_cases = vec![
         (format!("name=&email={}", email.url_encode()), "empty name"),
         (format!("name={}&email=", name.url_encode()), "empty email"),
@@ -74,8 +85,7 @@ async fn subscribe_returns_a_400_when_fields_are_present_but_invalid() {
     for (body, description) in test_cases {
         // Act
         let response = app.post_subscriptions(body).await;
-        
-        
+
         // Assert
         assert_eq!(
             400,
@@ -83,4 +93,25 @@ async fn subscribe_returns_a_400_when_fields_are_present_but_invalid() {
             "The API did not return a 400 Bad Request when the payload was {description}."
         );
     }
+}
+
+#[tokio::test]
+async fn subscribe_sends_a_confirmation_email_for_valid_data() {
+    // Arrange
+    let test_app = spawn_app().await;
+    let email = fake_email().as_ref().to_owned();
+    let name = fake_name();
+    let body = format!("name={}&email={}", name.url_encode(), email.url_encode());
+
+    Mock::given(path("/email"))
+        .and(method("POST"))
+        .respond_with(ResponseTemplate::new(200))
+        .expect(1)
+        .mount(&test_app.email_server)
+        .await;
+
+    // Act
+    test_app.post_subscriptions(body).await;
+
+    // Assert
 }
