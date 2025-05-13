@@ -1,4 +1,3 @@
-use reqwest::Url;
 use wiremock::{
     Mock, ResponseTemplate,
     matchers::{method, path},
@@ -39,10 +38,29 @@ async fn the_link_returned_by_subscribe_returns_a_200_if_called() {
     let confirmation_links = test_app.get_confirmation_links(email_request);
 
     // Act
-    let response = reqwest::get(confirmation_links.html)
+    reqwest::get(confirmation_links.html)
         .await
-        .expect("Failed to send GET request.");
+        .unwrap()
+        .error_for_status()
+        .unwrap();
 
     // Assert
-    assert_eq!(response.status().as_u16(), 200);
+    let saved = sqlx::query!(
+        r#"
+        SELECT email, 
+            name,
+            status
+        FROM subscriptions 
+        WHERE email = $1 
+        AND name = $2"#,
+        email,
+        name
+    )
+    .fetch_one(&test_app.db_pool)
+    .await
+    .expect("Failed to fetch saved subscriptions.");
+
+    assert_eq!(saved.email, email);
+    assert_eq!(saved.name, name);
+    assert_eq!(saved.status, "confirmed");
 }

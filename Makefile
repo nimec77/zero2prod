@@ -18,6 +18,9 @@ r:
 t:
 	./scripts/run-test.sh
 
+ts:
+	./scripts/run-test.sh --simple
+
 # Format the code
 f:
 	$(CARGO) fmt
