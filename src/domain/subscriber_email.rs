@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use validator::Validate;
 
 #[derive(Debug, Validate, Clone)]
@@ -21,6 +23,12 @@ impl SubscriberEmail {
 impl AsRef<str> for SubscriberEmail {
     fn as_ref(&self) -> &str {
         &self.email
+    }
+}
+
+impl Display for SubscriberEmail {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.email)
     }
 }
 
