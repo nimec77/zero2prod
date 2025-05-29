@@ -1,5 +1,8 @@
 use actix_web::{HttpResponse, ResponseError, http::StatusCode, web};
+use anyhow::Context;
 use sqlx::PgPool;
+
+use crate::email_client::EmailClient;
 
 use super::error_chain_fmt;
 
@@ -41,10 +44,23 @@ struct ConfirmedSubscriber {
 }
 
 pub async fn publish_newsletter(
-    _body: web::Json<BodyData>,
+    body: web::Json<BodyData>,
     pool: web::Data<PgPool>,
+    email_client: web::Data<EmailClient>,
 ) -> Result<HttpResponse, PublishError> {
-    let confirmed_subscribers = get_confirmed_subscribers(&pool).await?;
+    let subscribers = get_confirmed_subscribers(&pool).await?;
+
+    for subscriber in subscribers {
+        email_client
+            .send_email(
+                subscriber.email,
+                &body.title,
+                &body.content.text,
+                &body.content.html,
+            )
+            .await
+            .with_context(|| format!("Failed to send newsletter issue to {}", subscriber.email))?;
+    }
 
     Ok(HttpResponse::Ok().finish())
 }
