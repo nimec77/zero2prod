@@ -80,7 +80,7 @@ pub fn run(
     let server = HttpServer::new(move || {
         App::new()
             .wrap(TracingLogger::default())
-            .route("/newsletter", web::post().to(publish_newsletter))
+            .route("/newsletters", web::post().to(publish_newsletter))
             .route("/health_check", web::get().to(health_check))
             .route("/subscribe", web::post().to(subscribe))
             .route("/subscriptions/confirm", web::get().to(confirm))

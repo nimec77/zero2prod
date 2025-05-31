@@ -4,6 +4,7 @@ use fake::{
 };
 use once_cell::sync::Lazy;
 use sqlx::PgPool;
+use uuid::Uuid;
 use wiremock::MockServer;
 use zero2prod::{
     configuration::{DatabaseSettings, get_configuration},
@@ -72,7 +73,8 @@ impl TestApp {
 
     pub async fn post_newsletters(&self, body: serde_json::Value) -> reqwest::Response {
         reqwest::Client::new()
-            .post(format!("{}/newsletter", &self.address))
+            .post(format!("{}/newsletters", &self.address))
+            .basic_auth(Uuid::new_v4().to_string(), Some(Uuid::new_v4().to_string()))
             .json(&body)
             .send()
             .await
