@@ -3,6 +3,7 @@ use fake::{
     faker::{internet::en::SafeEmail, name::en::Name},
 };
 use once_cell::sync::Lazy;
+use sha3::Digest;
 use sqlx::PgPool;
 use uuid::Uuid;
 use wiremock::MockServer;
@@ -25,11 +26,45 @@ static TRACING: Lazy<()> = Lazy::new(|| {
     }
 });
 
+pub struct TestUser {
+    pub user_id: Uuid,
+    pub username: String,
+    pub password: String,
+}
+
+impl TestUser {
+    pub fn generate() -> Self {
+        Self {
+            user_id: Uuid::new_v4(),
+            username: Uuid::new_v4().to_string(),
+            password: Uuid::new_v4().to_string(),
+        }
+    }
+
+    async fn store(&self, pool: &PgPool) {
+        let password_hash = sha3::Sha3_256::digest(self.password.as_bytes());
+        let password_hash = format!("{password_hash:x}");
+        sqlx::query!(
+            r#"
+            INSERT INTO users (user_id, username, password_hash )
+            VALUES ($1, $2, $3)
+            "#,
+            self.user_id,
+            self.username,
+            password_hash,
+        )
+        .execute(pool)
+        .await
+        .expect("Failed to store test user.");
+    }
+}
+
 pub struct TestApp {
     pub address: String,
     pub port: u16,
     pub db_pool: PgPool,
     pub email_server: MockServer,
+    pub test_user: TestUser,
 }
 
 pub struct ConfirmationLinks {
@@ -46,21 +81,6 @@ impl TestApp {
             .send()
             .await
             .expect("Failed to execute request.")
-    }
-
-    pub async fn test_user(&self) -> (String, String) {
-        let row = sqlx::query!(
-            r#"
-            SELECT username, password
-            FROM users
-            LIMIT 1
-            "#,
-        )
-        .fetch_one(&self.db_pool)
-        .await
-        .expect("Failed to fetch test user.");
-
-        (row.username, row.password)
     }
 
     pub fn get_confirmation_links(&self, email_request: &wiremock::Request) -> ConfirmationLinks {
@@ -87,34 +107,14 @@ impl TestApp {
     }
 
     pub async fn post_newsletters(&self, body: serde_json::Value) -> reqwest::Response {
-        let (username, password) = self.test_user().await;
         reqwest::Client::new()
             .post(format!("{}/newsletters", &self.address))
-            .basic_auth(username, Some(password))
+            .basic_auth(&self.test_user.username, Some(&self.test_user.password))
             .json(&body)
             .send()
             .await
             .expect("Failed to execute request.")
     }
-}
-
-async fn add_test_user(pool: &PgPool) {
-    sqlx::query!(
-        r#"
-        INSERT INTO users (
-            user_id,
-            username, 
-            password
-            )
-        VALUES ($1, $2, $3)
-        "#,
-        Uuid::new_v4(),
-        Uuid::new_v4().to_string(),
-        Uuid::new_v4().to_string(),
-    )
-    .execute(pool)
-    .await
-    .expect("Failed to add test user.");
 }
 
 pub async fn spawn_app() -> TestApp {
@@ -144,8 +144,9 @@ pub async fn spawn_app() -> TestApp {
         port: application_port,
         db_pool: get_connection_pool(&configuration.database),
         email_server,
+        test_user: TestUser::generate(),
     };
-    add_test_user(&test_app.db_pool).await;
+    test_app.test_user.store(&test_app.db_pool).await;
 
     test_app
 }
