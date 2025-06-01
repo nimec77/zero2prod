@@ -161,6 +161,7 @@ async fn subscribe_sends_a_confirmation_email_with_a_link() {
     assert_eq!(confirmation_links.html, confirmation_links.plain_text);
 }
 
+// This ignore don't remove, it's a test for the database error
 #[tokio::test]
 #[ignore]
 async fn subscribe_fails_if_there_is_a_fatal_database_error() {

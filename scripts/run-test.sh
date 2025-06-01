@@ -27,6 +27,8 @@ sqlx migrate run
 echo "[3/4] running cargo tests…"
 if [[ "${1:-}" == "--simple" ]]; then
     cargo test
+elif [[ -n "${1:-}" ]]; then
+    TEST_LOG=1 RUST_BACKTRACE=1 cargo test "${1}" | bunyan
 else
     TEST_LOG=1 RUST_BACKTRACE=1 cargo test | bunyan
 fi

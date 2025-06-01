@@ -6,3 +6,4 @@
 configuration.yaml
 .env
 .env_test
+*.log

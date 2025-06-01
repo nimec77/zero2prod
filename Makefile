@@ -16,7 +16,7 @@ r:
 
 # Run tests
 t:
-	./scripts/run-test.sh
+	./scripts/run-test.sh $(ARGS)
 
 ts:
 	./scripts/run-test.sh --simple
