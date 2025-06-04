@@ -1,5 +1,5 @@
 use argon2::{
-    Argon2, PasswordHasher,
+    Algorithm, Argon2, Params, PasswordHasher, Version,
     password_hash::{SaltString, rand_core::OsRng},
 };
 use fake::{
@@ -46,10 +46,14 @@ impl TestUser {
 
     async fn store(&self, pool: &PgPool) {
         let salt = SaltString::generate(&mut OsRng);
-        let password_hash = Argon2::default()
-            .hash_password(self.password.as_bytes(), &salt)
-            .unwrap()
-            .to_string();
+        let password_hash = Argon2::new(
+            Algorithm::Argon2id,
+            Version::V0x13,
+            Params::new(15000, 2, 1, None).unwrap(),
+        )
+        .hash_password(self.password.as_bytes(), &salt)
+        .unwrap()
+        .to_string();
 
         sqlx::query!(
             r#"
