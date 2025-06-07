@@ -1,11 +1,7 @@
 use actix_web::{
-    HttpResponse, ResponseError,
-    error::InternalError,
-    http::{
-        StatusCode,
-        header::{self},
-    },
-    web,
+    cookie::Cookie, error::InternalError, http::{
+        header::{self}, StatusCode
+    }, web, HttpResponse, ResponseError
 };
 use hmac::{Hmac, Mac};
 use secrecy::SecretString;
@@ -87,6 +83,7 @@ pub async fn login(
             };
             let response = HttpResponse::SeeOther()
                 .insert_header((header::LOCATION, "/login"))
+                .cookie(Cookie::new("_flash", e.to_string()))
                 .finish();
             Err(InternalError::from_response(e, response))
         }
