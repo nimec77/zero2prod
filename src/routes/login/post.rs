@@ -1,5 +1,5 @@
 use actix_web::{
-    cookie::Cookie, error::InternalError, http::{
+    error::InternalError, http::{
         header::{self}, StatusCode
     }, web, HttpResponse, ResponseError
 };
@@ -83,7 +83,6 @@ pub async fn login(
             };
             let response = HttpResponse::SeeOther()
                 .insert_header((header::LOCATION, "/login"))
-                .cookie(Cookie::new("_flash", e.to_string()))
                 .finish();
             Err(InternalError::from_response(e, response))
         }

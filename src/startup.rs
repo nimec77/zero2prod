@@ -1,7 +1,10 @@
 use std::net::TcpListener;
 
+use actix_web::cookie::Key;
 use actix_web::{App, HttpServer, dev::Server, web};
-use secrecy::SecretString;
+use actix_web_flash_messages::storage::CookieMessageStore;
+use actix_web_flash_messages::FlashMessagesFramework;
+use secrecy::{ExposeSecret, SecretString};
 use sqlx::PgPool;
 use sqlx::postgres::PgPoolOptions;
 use tracing_actix_web::TracingLogger;
@@ -70,9 +73,6 @@ impl Application {
     }
 }
 
-#[derive(Clone)]
-pub struct HmacSecret(pub SecretString);
-
 pub struct ApplicationBaseUrl(pub String);
 
 pub fn run(
@@ -85,9 +85,13 @@ pub fn run(
     let connection = web::Data::new(connection_pool);
     let email_client = web::Data::new(email_client);
     let base_url = web::Data::new(ApplicationBaseUrl(base_url));
-    let hmac_secret = web::Data::new(HmacSecret(hmac_secret));
+    let message_store = CookieMessageStore::builder(
+        Key::from(hmac_secret.expose_secret().as_bytes())
+        ).build();
+    let message_framework = FlashMessagesFramework::builder(message_store).build();
     let server = HttpServer::new(move || {
         App::new()
+            .wrap(message_framework.clone())
             .wrap(TracingLogger::default())
             .route("/", web::get().to(home))
             .route("/login", web::get().to(login_form))
