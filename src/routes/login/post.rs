@@ -1,5 +1,6 @@
 use actix_web::{
     HttpResponse, ResponseError,
+    error::InternalError,
     http::{
         StatusCode,
         header::{self},
@@ -7,12 +8,12 @@ use actix_web::{
     web,
 };
 use hmac::{Hmac, Mac};
-use secrecy::{ExposeSecret, SecretString};
+use secrecy::SecretString;
 use sqlx::PgPool;
 
 use crate::{
-    authentication::{validate_credentials, AuthError, Credentials},
-    routes::error_chain_fmt, startup::HmacSecret,
+    authentication::{AuthError, Credentials, validate_credentials},
+    routes::error_chain_fmt,
 };
 
 #[derive(serde::Deserialize)]
@@ -60,14 +61,13 @@ impl ResponseError for LoginError {
 }
 
 #[tracing::instrument(
-    skip(form, pool, secret),
+    skip(form, pool),
     fields(username=tracing::field::Empty, user_id=tracing::field::Empty)
     )]
 pub async fn login(
     form: web::Form<FormData>,
     pool: web::Data<PgPool>,
-    secret: web::Data<HmacSecret>,
-) -> HttpResponse {
+) -> Result<HttpResponse, InternalError<LoginError>> {
     let credentials = Credentials {
         username: form.0.username,
         password: form.0.password,
@@ -76,29 +76,19 @@ pub async fn login(
         Ok(user_id) => {
             tracing::Span::current().record("user_id", tracing::field::display(&user_id));
 
-            HttpResponse::SeeOther()
+            Ok(HttpResponse::SeeOther()
                 .insert_header((header::LOCATION, "/"))
-                .finish()
+                .finish())
         }
         Err(e) => {
             let e = match e {
                 AuthError::InvalidCredentials(_) => LoginError::AuthError(e.into()),
                 AuthError::UnexpectedError(_) => LoginError::UnexpectedError(e.into()),
             };
-            let query_string = format!("error={}", urlencoding::Encoded::new(e.to_string()));
-            let hmac_tag = {
-                let mut mac =
-                    Hmac::<sha2::Sha256>::new_from_slice(secret.0.expose_secret().as_bytes())
-                        .unwrap();
-                mac.update(query_string.as_bytes());
-                mac.finalize().into_bytes()
-            };
-            HttpResponse::SeeOther()
-                .insert_header((
-                    header::LOCATION,
-                    format!("/login?{query_string}&tag={hmac_tag:x}"),
-                ))
-                .finish()
+            let response = HttpResponse::SeeOther()
+                .insert_header((header::LOCATION, "/login"))
+                .finish();
+            Err(InternalError::from_response(e, response))
         }
     }
 }
