@@ -42,7 +42,7 @@ impl ResponseError for LoginError {
 
             mac.finalize().into_bytes()
         };
-        let encoded_error = urlencoding::Encoded::new(self.to_string());
+        // let encoded_error = urlencoding::Encoded::new(self.to_string());
         HttpResponse::build(self.status_code())
             .insert_header((
                 header::LOCATION,

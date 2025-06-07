@@ -1,27 +1,6 @@
-use actix_web::{HttpRequest, HttpResponse, http::header::ContentType, web};
-use hmac::{Hmac, Mac};
-use secrecy::ExposeSecret;
-
-use crate::startup::HmacSecret;
-
-#[derive(serde::Deserialize)]
-pub struct QueryParams {
-    error: String,
-    tag: String,
-}
-
-impl QueryParams {
-    fn verify(self, secret: &HmacSecret) -> Result<String, anyhow::Error> {
-        let tag = hex::decode(self.tag)?;
-        let query_string = format!("error={}", urlencoding::Encoded::new(&self.error));
-        let mut mac =
-            Hmac::<sha2::Sha256>::new_from_slice(secret.0.expose_secret().as_bytes()).unwrap();
-        mac.update(query_string.as_bytes());
-        mac.verify_slice(&tag)?;
-
-        Ok(self.error)
-    }
-}
+use actix_web::{
+    cookie::Cookie, http::header::ContentType, HttpRequest, HttpResponse,
+};
 
 pub async fn login_form(request: HttpRequest) -> HttpResponse {
     let error_html = match request.cookie("_flash") {
@@ -50,7 +29,11 @@ pub async fn login_form(request: HttpRequest) -> HttpResponse {
             </body>
             </html>"#
     );
-    HttpResponse::Ok()
+    let mut response = HttpResponse::Ok()
         .content_type(ContentType::html())
-        .body(html)
+        .body(html);
+
+    response.add_removal_cookie(&Cookie::new("_flash", "")).unwrap();
+
+    response
 }
