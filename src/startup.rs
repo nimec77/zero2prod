@@ -14,7 +14,7 @@ use tracing_actix_web::TracingLogger;
 use crate::configuration::{DatabaseSettings, Settings};
 use crate::email_client::EmailClient;
 use crate::routes::{
-    confirm, health_check, home, login, login_form, publish_newsletter, subscribe,
+    admin_dashboard, confirm, health_check, home, login, login_form, publish_newsletter, subscribe,
 };
 
 pub fn get_connection_pool(configuration: &DatabaseSettings) -> PgPool {
@@ -62,7 +62,8 @@ impl Application {
             configuration.application.base_url,
             configuration.hmac_secret,
             configuration.redis_uri,
-        ).await?;
+        )
+        .await?;
 
         Ok(Self { port, server })
     }
@@ -108,6 +109,7 @@ pub async fn run(
             .route("/health_check", web::get().to(health_check))
             .route("/subscribe", web::post().to(subscribe))
             .route("/subscriptions/confirm", web::get().to(confirm))
+            .route("/admin/dashboard", web::get().to(admin_dashboard))
             .app_data(connection.clone())
             .app_data(email_client.clone())
             .app_data(base_url.clone())
