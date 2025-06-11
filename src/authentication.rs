@@ -34,12 +34,8 @@ pub async fn validate_credentials(
         expected_password_hash = stored_password_hash;
     }
 
-    let _ = spawn_blocking_with_tracing(move || {
-        verify_password_hash(expected_password_hash, credentials.password)
-    })
-    .await
-    .context("Failed to spawn blocking task.")
-    .map_err(AuthError::UnexpectedError)?;
+    verify_password_hash(expected_password_hash, credentials.password)
+        .map_err(|_| AuthError::InvalidCredentials(anyhow::anyhow!("Invalid credentials.")))?;
 
     user_id.ok_or_else(|| AuthError::InvalidCredentials(anyhow::anyhow!("Invalid credentials.")))
 }

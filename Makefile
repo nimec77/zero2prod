@@ -12,7 +12,7 @@ build:
 
 # Run the project
 r:
-	$(CARGO) run
+	$(CARGO) run | bunyan
 
 # Run tests
 t:
