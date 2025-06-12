@@ -1,10 +1,11 @@
 # Active Context
 
 **Current Focus:**
-- Example: Implementing newsletter subscription feature
+- Refining and extending newsletter, authentication, and admin dashboard features
+- Improving test coverage and deployment readiness
 
 **Blockers:**
-- Example: Awaiting API key for email service
+- None at this time
 
 
 

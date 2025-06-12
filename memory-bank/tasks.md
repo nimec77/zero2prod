@@ -1,14 +1,18 @@
 # Tasks
 
 ## To Do
-- [ ] Example: Set up CI/CD pipeline
-- [ ] Example: Implement user authentication
+- [ ] Add more admin dashboard features
+- [ ] Improve test coverage
+- [ ] Prepare deployment scripts and documentation
 
 ## In Progress
-- [ ] Example: Design database schema
+- [ ] Refine authentication and authorization flows
 
 ## Done
-- [x] Example: Project scaffolding
+- [x] Implement newsletter subscription and confirmation
+- [x] Implement secure authentication
+- [x] Implement admin dashboard
+- [x] Implement newsletter delivery
 
 
 

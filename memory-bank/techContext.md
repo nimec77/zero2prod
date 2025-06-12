@@ -12,6 +12,7 @@
 ## Key Decisions
 - Use environment variables for configuration
 - Use migrations for database schema management
+- Use Argon2 for password hashing and secure authentication
 
 
 
