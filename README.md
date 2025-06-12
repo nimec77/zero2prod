@@ -7,3 +7,5 @@
 * Sections and badges are intentionally minimal – adjust wording or add shields (CI, crates‑io, coverage) once those pipelines are in place.
 
 Feel free to tweak tone or depth before committing.
+
+https://www.zero2prod.com/
