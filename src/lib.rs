@@ -11,6 +11,7 @@ pub mod routes;
 pub mod startup;
 pub mod telemetry;
 pub mod session_state;
+pub mod utils;
 
 pub fn get_subscriber<Sink>(
     name: String,
