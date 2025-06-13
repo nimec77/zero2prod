@@ -1,18 +1,18 @@
+mod admin;
 mod health_check;
 mod home;
 mod login;
 mod newsletter;
 mod subscriptions;
 mod subscriptions_confirm;
-mod admin;
 
+pub use admin::*;
 pub use health_check::health_check;
 pub use home::home;
 pub use login::{login, login_form};
 pub use newsletter::publish_newsletter;
 pub use subscriptions::subscribe;
 pub use subscriptions_confirm::confirm;
-pub use admin::*;
 
 pub fn error_chain_fmt(
     e: &impl std::error::Error,
