@@ -63,7 +63,8 @@ async fn newsletters_are_not_delivered_to_unconfirmed_subscribers() {
         "content": {
         "text": "Newsletter body as plain text",
         "html": "<p>Newsletter body as HTML</p>",
-        }
+        },
+        "idempotency_key": uuid::Uuid::new_v4().to_string(),
     });
 
     let response = test_app.post_newsletters(newsletter_request_body).await;
@@ -92,7 +93,8 @@ async fn newsletters_are_delivered_to_confirmed_subscribers() {
         "content": {
             "text": "Newsletter body as plain text",
             "html": "<p>Newsletter body as HTML</p>",
-        }
+        },
+        "idempotency_key": uuid::Uuid::new_v4().to_string(),
     });
 
     let response = test_app.post_newsletters(newsletter_request_body).await;
@@ -146,7 +148,8 @@ async fn requests_missing_authorization_are_rejected() {
             "content": {
                 "text": "Newsletter body as plain text",
                 "html": "<p>Newsletter body as HTML</p>",
-            }
+            },
+            "idempotency_key": uuid::Uuid::new_v4().to_string()
         }))
         .send()
         .await

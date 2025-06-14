@@ -12,6 +12,7 @@ pub mod session_state;
 pub mod startup;
 pub mod telemetry;
 pub mod utils;
+pub mod idempotency;
 
 pub fn get_subscriber<Sink>(
     name: String,
