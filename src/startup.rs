@@ -117,8 +117,8 @@ pub async fn run(
                     .route("/password", web::get().to(change_password_form))
                     .route("/password", web::post().to(change_password))
                     .route("/logout", web::post().to(log_out))
-                    .route("/newsletter", web::get().to(publish_newsletter_form))
-                    .route("/newsletter", web::post().to(publish_newsletter)),
+                    .route("/newsletters", web::get().to(publish_newsletter_form))
+                    .route("/newsletters", web::post().to(publish_newsletter)),
             )
             .app_data(connection.clone())
             .app_data(email_client.clone())

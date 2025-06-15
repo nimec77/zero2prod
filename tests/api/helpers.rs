@@ -65,7 +65,7 @@ impl TestUser {
 
         sqlx::query!(
             r#"
-            INSERT INTO users (user_id, username, password_hash )
+            INSERT INTO users (user_id, username, password_hash)
             VALUES ($1, $2, $3)
             "#,
             self.user_id,
@@ -149,16 +149,6 @@ impl TestApp {
         let plain_text = get_link(body["TextBody"].as_str().unwrap());
 
         ConfirmationLinks { html, plain_text }
-    }
-
-    pub async fn post_newsletters(&self, body: serde_json::Value) -> reqwest::Response {
-        self.api_client
-            .post(format!("{}/newsletters", &self.address))
-            .basic_auth(&self.test_user.username, Some(&self.test_user.password))
-            .json(&body)
-            .send()
-            .await
-            .expect("Failed to execute request.")
     }
 
     pub async fn get_admin_dashboard(&self) -> reqwest::Response {

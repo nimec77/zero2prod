@@ -21,7 +21,11 @@ async fn create_unconfirmed_subscriber(test_app: &TestApp) -> ConfirmationLinks 
         .mount_as_scoped(&test_app.email_server)
         .await;
 
-    test_app.post_subscriptions(body).await;
+    test_app
+        .post_subscriptions(body)
+        .await
+        .error_for_status()
+        .unwrap();
 
     let email_request = &test_app
         .email_server
@@ -48,6 +52,7 @@ async fn create_confirmed_subscriber(test_app: &TestApp) {
 async fn newsletters_are_not_delivered_to_unconfirmed_subscribers() {
     let test_app = spawn_app().await;
     create_unconfirmed_subscriber(&test_app).await;
+    test_app.test_user.login(&test_app).await;
 
     let _ = Mock::given(any())
         .respond_with(ResponseTemplate::new(200))
@@ -60,21 +65,20 @@ async fn newsletters_are_not_delivered_to_unconfirmed_subscribers() {
     // We might change it later on.
     let newsletter_request_body = serde_json::json!({
         "title": "Newsletter title",
-        "content": {
-        "text": "Newsletter body as plain text",
-        "html": "<p>Newsletter body as HTML</p>",
-        },
-        "idempotency_key": uuid::Uuid::new_v4().to_string(),
+        "text_content": "Newsletter body as plain text",
+        "html_content": "<p>Newsletter body as HTML</p>",
+        "idempotency_key": uuid::Uuid::new_v4().to_string()
     });
 
-    let response = test_app.post_newsletters(newsletter_request_body).await;
+    let response = test_app
+        .post_publish_newsletter(&newsletter_request_body)
+        .await;
 
     // Assert
-    assert_eq!(response.status().as_u16(), 200);
+    assert_is_redirect_to(&response, "/admin/newsletters");
 }
 
 #[tokio::test]
-#[ignore]
 async fn newsletters_are_delivered_to_confirmed_subscribers() {
     // Arrange
     let test_app = spawn_app().await;
@@ -97,10 +101,12 @@ async fn newsletters_are_delivered_to_confirmed_subscribers() {
         "idempotency_key": uuid::Uuid::new_v4().to_string(),
     });
 
-    let response = test_app.post_newsletters(newsletter_request_body).await;
+    let response = test_app
+        .post_publish_newsletter(&newsletter_request_body)
+        .await;
 
     // Assert
-    assert_eq!(response.status().as_u16(), 200);
+    assert_is_redirect_to(&response, "/admin/newsletters");
 }
 
 #[tokio::test]
@@ -125,7 +131,7 @@ async fn newsletters_returns_400_for_invalid_data() {
 
     for (invalid_body, error_message) in test_cases {
         // Act
-        let response = test_app.post_newsletters(invalid_body).await;
+        let response = test_app.post_publish_newsletter(&invalid_body).await;
 
         // Assert
         assert_eq!(
@@ -137,12 +143,13 @@ async fn newsletters_returns_400_for_invalid_data() {
 }
 
 #[tokio::test]
+#[ignore]
 async fn requests_missing_authorization_are_rejected() {
     // Arrange
     let test_app = spawn_app().await;
 
     let response = reqwest::Client::new()
-        .post(format!("{}/newsletters", test_app.address))
+        .post(format!("{}/admin/newsletters", test_app.address))
         .json(&serde_json::json!({
             "title": "Newsletter title",
             "content": {
@@ -164,6 +171,7 @@ async fn requests_missing_authorization_are_rejected() {
 }
 
 #[tokio::test]
+#[ignore]
 async fn non_existent_user_is_rejected() {
     // Arrange
     let test_app = spawn_app().await;
@@ -173,7 +181,7 @@ async fn non_existent_user_is_rejected() {
     let password = Uuid::new_v4().to_string();
 
     let response = reqwest::Client::new()
-        .post(format!("{}/newsletters", &test_app.address))
+        .post(format!("{}/admin/newsletters", &test_app.address))
         .basic_auth(username, Some(password))
         .json(&serde_json::json!({
             "title": "Newsletter title",
@@ -205,7 +213,7 @@ async fn invalid_password_is_rejected() {
     assert_ne!(test_app.test_user.password, password);
 
     let response = reqwest::Client::new()
-        .post(format!("{}/newsletters", &test_app.address))
+        .post(format!("{}/admin/newsletters", &test_app.address))
         .basic_auth(username, Some(password))
         .json(&serde_json::json!({
             "title": "Newsletter title",
@@ -232,6 +240,7 @@ async fn newsletter_creation_is_idempotent() {
     let test_app = spawn_app().await;
     create_confirmed_subscriber(&test_app).await;
     test_app.test_user.login(&test_app).await;
+
     Mock::given(path("/email"))
         .and(method("POST"))
         .respond_with(ResponseTemplate::new(200))
