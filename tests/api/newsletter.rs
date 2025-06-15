@@ -295,10 +295,10 @@ async fn concurrent_form_submission_is_handled_gracefully() {
 
     // Act - Submit two newsletter forms concurrently
     let newsletter_request_body = serde_json::json!({
-    "title": "Newsletter title",
-    "text_content": "Newsletter body as plain text",
-    "html_content": "<p>Newsletter body as HTML</p>",
-    "idempotency_key": uuid::Uuid::new_v4().to_string()
+        "title": "Newsletter title",
+        "text_content": "Newsletter body as plain text",
+        "html_content": "<p>Newsletter body as HTML</p>",
+        "idempotency_key": uuid::Uuid::new_v4().to_string()
     });
     let response1 = test_app.post_publish_newsletter(&newsletter_request_body);
     let response2 = test_app.post_publish_newsletter(&newsletter_request_body);
