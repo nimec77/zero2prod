@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use uuid::Uuid;
 use wiremock::{
-    Mock, ResponseTemplate,
+    Mock, MockBuilder, ResponseTemplate,
     matchers::{any, method, path},
 };
 
@@ -13,7 +13,10 @@ use crate::helpers::{
 async fn create_unconfirmed_subscriber(test_app: &TestApp) -> ConfirmationLinks {
     let name = fake_name();
     let email = fake_email().as_ref().to_owned();
-    let body = format!("name={name}&email={email}");
+    let body = urlencoding::encode(&serde_json::json!({
+        "name": name,
+        "email": email
+        }).to_string()).to_string();
 
     let _mock_guard = Mock::given(path("/email"))
         .and(method("POST"))
@@ -308,4 +311,55 @@ async fn concurrent_form_submission_is_handled_gracefully() {
         response1.text().await.unwrap(),
         response2.text().await.unwrap()
     );
+}
+
+fn when_sending_an_email() -> MockBuilder {
+    Mock::given(path("/email")).and(method("POST"))
+}
+
+#[tokio::test]
+async fn transient_errors_do_not_cause_duplicate_deliveries_on_retries() {
+    // Arrange
+    let test_app = spawn_app().await;
+    let newsletter_request_body = serde_json::json!({
+    "title": "Newsletter title",
+    "text_content": "Newsletter body as plain text",
+    "html_content": "<p>Newsletter body as HTML</p>",
+    "idempotency_key": uuid::Uuid::new_v4().to_string()
+    });
+    // Two subscribers instead of one!
+    create_confirmed_subscriber(&test_app).await;
+    create_confirmed_subscriber(&test_app).await;
+    test_app.test_user.login(&test_app).await;
+
+    // Part 1 - Submit newsletter form
+    // Email delivery fails for the second subscriber
+    when_sending_an_email()
+        .respond_with(ResponseTemplate::new(200))
+        .up_to_n_times(1)
+        .expect(1)
+        .mount(&test_app.email_server)
+        .await;
+    when_sending_an_email()
+        .respond_with(ResponseTemplate::new(500))
+        .up_to_n_times(1)
+        .expect(1)
+        .mount(&test_app.email_server)
+        .await;
+    let response = test_app
+        .post_publish_newsletter(&newsletter_request_body)
+        .await;
+    assert_eq!(response.status().as_u16(), 500);
+
+    // Part 2 - Retry submitting the form
+    // Email delivery will succeed for both subscribers now
+    when_sending_an_email()
+        .respond_with(ResponseTemplate::new(200))
+        .expect(1)
+        .named("Delivery retry")
+        .mount(&test_app.email_server)
+        .await;
+
+    let response = test_app.post_publish_newsletter(&newsletter_request_body).await;
+    assert_eq!(response.status().as_u16(), 303);
 }

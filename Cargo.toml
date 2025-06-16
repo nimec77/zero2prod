@@ -27,7 +27,7 @@ htmlize = "1.0.6"
 linkify = "0.10.0"
 once_cell = "1.21.3"
 rand = { version = "0.9.1", features = ["std_rng"] }
-reqwest = { version = "0.12.19", default-features = false, features = ["cookies", "json", "rustls-tls"] }
+reqwest = { version = "0.12.20", default-features = false, features = ["cookies", "json", "rustls-tls"] }
 secrecy = { version = "0.10.3", features = ["serde"] }
 serde = { version = "1.0.219", features = ["derive"] }
 serde-aux = "4.7.0"
