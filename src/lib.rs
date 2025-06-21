@@ -13,6 +13,7 @@ pub mod startup;
 pub mod telemetry;
 pub mod utils;
 pub mod idempotency;
+pub mod issue_delivery_worker;
 
 pub fn get_subscriber<Sink>(
     name: String,

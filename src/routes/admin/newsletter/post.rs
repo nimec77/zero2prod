@@ -1,7 +1,4 @@
-use actix_web::{
-    HttpResponse,
-    web,
-};
+use actix_web::{HttpResponse, web};
 use actix_web_flash_messages::FlashMessage;
 use anyhow::Context;
 use sqlx::{PgPool, Postgres, Transaction};
